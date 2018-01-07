@@ -40,11 +40,6 @@ class MockBuilderGeneratorActionHandler : CodeInsightActionHandler
                     GlobalSearchScope.allScope(project)) ?: throw IllegalStateException("EasyMock is not on classpath.")
 
             add(elementFactory.createImportStaticStatement(easymockClass, "*"))
-            add(elementFactory.createImportStaticStatement(easymockClass, "expect"))
-            add(elementFactory.createImportStaticStatement(easymockClass, "replay"))
-            add(elementFactory.createImportStaticStatement(easymockClass, "isA"))
-            add(elementFactory.createImportStaticStatement(easymockClass, "anyInt"))
-            add(elementFactory.createImportStaticStatement(easymockClass, "anyBoolean"))
         }
 
         mockBuilderClass.apply {
