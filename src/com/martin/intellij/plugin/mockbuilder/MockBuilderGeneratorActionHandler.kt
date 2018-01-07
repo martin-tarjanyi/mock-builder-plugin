@@ -1,31 +1,26 @@
 package com.martin.intellij.plugin.mockbuilder
 
+import com.intellij.codeInsight.CodeInsightActionHandler
 import com.intellij.lang.java.JavaImportOptimizer
-import com.intellij.openapi.actionSystem.CommonDataKeys
-import com.intellij.openapi.actionSystem.DataContext
-import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.editor.actionSystem.EditorWriteActionHandler
+import com.intellij.openapi.project.Project
 import com.intellij.psi.*
 import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.intellij.psi.search.GlobalSearchScope
 
-class MockBuilderGeneratorActionHandler : EditorWriteActionHandler()
+class MockBuilderGeneratorActionHandler : CodeInsightActionHandler
 {
-    override fun executeWriteAction(editor: Editor, caret: Caret?, dataContext: DataContext)
+    override fun invoke(project: Project, editor: Editor, originalFile: PsiFile)
     {
-        if (!isApplicable(editor, dataContext)) return
-
-        val project = editor.project!!
-        val psiJavaFile = dataContext.getData(CommonDataKeys.PSI_FILE.name) as PsiJavaFile
+        if (originalFile !is PsiJavaFile) return
 
         val elementFactory = JavaPsiFacade.getElementFactory(project)
         val javaDirectoryService = JavaDirectoryService.getInstance()
 
-        val containingDirectory = psiJavaFile.containingDirectory
+        val containingDirectory = originalFile.containingDirectory
 
-        val originalClass = psiJavaFile.classes.firstOrNull() ?: return
+        val originalClass = originalFile.classes.firstOrNull() ?: return
 
         val mockBuilderClass = javaDirectoryService.createClass(containingDirectory, "${originalClass.name}MockBuilder")
 
@@ -96,7 +91,7 @@ class MockBuilderGeneratorActionHandler : EditorWriteActionHandler()
 
                                 add(elementFactory.createStatementFromText("expect($mockVariableName.${method.name}($parameters))" +
                                         ".andStubReturn(${uniqueStubFields[index].name});"))
-                    }
+                            }
 
                     add(elementFactory.createStatementFromText(
                             "replay($mockVariableName);"))
@@ -167,14 +162,6 @@ class MockBuilderGeneratorActionHandler : EditorWriteActionHandler()
 
     private fun isNotMethodInheritedFromObject(
             it: PsiMethod) = it.containingClass?.name?.takeIf { it != "Object" } != null
-
-    private fun isApplicable(editor: Editor, dataContext: DataContext): Boolean
-    {
-        val isProjectOpen = editor.project != null
-        val isJavaFile = dataContext.getData(CommonDataKeys.PSI_FILE.name) as? PsiJavaFile != null
-
-        return isProjectOpen && isJavaFile
-    }
 }
 
 
