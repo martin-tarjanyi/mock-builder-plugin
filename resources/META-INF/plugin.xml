@@ -28,9 +28,16 @@
     <!-- Add your extensions here -->
   </extensions>
 
+  <project-components>
+    <component>
+      <interface-class>com.martin.intellij.plugin.mockbuilder.component.MockBuilderGeneratorProjectComponent</interface-class>
+      <implementation-class>com.martin.intellij.plugin.mockbuilder.component.impl.MockBuilderGeneratorProjectComponentImpl</implementation-class>
+    </component>
+  </project-components>
+
   <actions>
     <!-- Add your actions here -->
-    <action id="mock-builder-plugin" class="com.martin.intellij.plugin.mockbuilder.MockBuilderGeneratorAction" text="Mock Builder Generator"
+    <action id="mock-builder-plugin" class="com.martin.intellij.plugin.mockbuilder.action.MockBuilderGeneratorAction" text="Mock Builder Generator"
             description="Creates Mock Builder with EasyMock">
       <add-to-group group-id="CodeMenu" anchor="last"/>
       <keyboard-shortcut keymap="$default" first-keystroke="alt shift U"/>

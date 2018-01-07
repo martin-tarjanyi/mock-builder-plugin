@@ -1,4 +1,4 @@
-package com.martin.intellij.plugin.mockbuilder
+package com.martin.intellij.plugin.mockbuilder.extension
 
 fun String.lastCharIfDigit(): Int?
 {

@@ -1,4 +1,4 @@
-package com.martin.intellij.plugin.mockbuilder
+package com.martin.intellij.plugin.mockbuilder.action
 
 import com.intellij.codeInsight.CodeInsightActionHandler
 import com.intellij.codeInsight.actions.BaseCodeInsightAction
