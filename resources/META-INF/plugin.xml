@@ -1,8 +1,8 @@
 <idea-plugin>
-  <id>com.your.company.unique.plugin.id</id>
+  <id>com.martin.intellij.plugin.mockbuilder</id>
   <name>Plugin display name here</name>
   <version>1.0</version>
-  <vendor email="support@yourcompany.com" url="http://www.yourcompany.com">YourCompany</vendor>
+  <vendor email="support@yourcompany.com" url="http://www.mycomapany.com">MyCompany</vendor>
 
   <description><![CDATA[
       Enter short description for your plugin here.<br>
@@ -30,8 +30,8 @@
 
   <actions>
     <!-- Add your actions here -->
-    <action id="unit-test-generator" class="com.martin.intellij.plugin.MockBuilderGenerator" text="Unit Test Generator"
-            description="Creates unit test">
+    <action id="mock-builder-plugin" class="com.martin.intellij.plugin.mockbuilder.MockBuilderGenerator" text="Mock Builder Generator"
+            description="Creates Mock Builder with EasyMock">
       <add-to-group group-id="CodeMenu" anchor="last"/>
       <keyboard-shortcut keymap="$default" first-keystroke="alt shift U"/>
     </action>

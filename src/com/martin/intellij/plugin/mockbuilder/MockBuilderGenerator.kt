@@ -1,4 +1,4 @@
-package com.martin.intellij.plugin
+package com.martin.intellij.plugin.mockbuilder
 
 import com.intellij.openapi.editor.actionSystem.EditorAction
 
