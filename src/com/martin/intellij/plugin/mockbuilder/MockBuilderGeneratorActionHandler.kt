@@ -1,9 +1,8 @@
 package com.martin.intellij.plugin.mockbuilder
 
-import com.intellij.codeInsight.actions.OptimizeImportsAction
+import com.intellij.lang.java.JavaImportOptimizer
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DataContext
-import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.actionSystem.EditorWriteActionHandler
@@ -111,13 +110,9 @@ class MockBuilderGeneratorActionHandler : EditorWriteActionHandler()
 
         CodeStyleManager.getInstance(project).reformat(mockBuilderClass)
 
+        JavaImportOptimizer().processFile(mockBuilderJavaFile).run()
+
         mockBuilderClass.navigate(true)
-
-        val mockClassEditor = getEditor(mockBuilderClass)
-        val mockClassContext = SimpleDataContext.getSimpleContext(CommonDataKeys.EDITOR.name, mockClassEditor,
-                dataContext)
-
-        OptimizeImportsAction.actionPerformedImpl(mockClassContext)
     }
 
     private fun mapToEasyMockType(psiType: PsiType): String
@@ -191,3 +186,15 @@ class MockBuilderGeneratorActionHandler : EditorWriteActionHandler()
 
 
 //Messages.showMessageDialog("done", "My Message Box", Messages.getInformationIcon())
+
+
+
+
+//        val mockClassEditor = PsiUtilBase.findEditor(mockBuilderClass)
+//
+//        val mockClassContext = SimpleDataContext.getSimpleContext(CommonDataKeys.EDITOR.name, mockClassEditor,
+//                dataContext)
+//
+////        psiJavaFile.virtualFile.move()
+//
+//        OptimizeImportsAction.actionPerformedImpl(mockClassContext)
