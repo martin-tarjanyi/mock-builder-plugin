@@ -141,7 +141,7 @@ class MockBuilderGeneratorActionHandler : CodeInsightActionHandler
                 .filter { isNotVoid(it) }
                 .map {
                     val generatedFieldName = generateStubFieldName(it)
-                    if (fieldNames.addIfMissing(generatedFieldName))
+                    if (fieldNames.add(generatedFieldName))
                     {
                         elementFactory.createField(generatedFieldName, it.returnType!!)
                     } else
