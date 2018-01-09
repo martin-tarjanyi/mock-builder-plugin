@@ -1,13 +1,16 @@
 package com.martin.intellij.plugin.mockbuilder.action
 
 import com.intellij.codeInsight.CodeInsightActionHandler
+import com.intellij.ide.util.PackageUtil
 import com.intellij.lang.java.JavaImportOptimizer
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiJavaFile
 import com.intellij.psi.codeStyle.CodeStyleManager
 import com.martin.intellij.plugin.mockbuilder.component.MockBuilderGeneratorProjectComponent
+import com.martin.intellij.plugin.mockbuilder.dialog.CreateMockBuilderDialog
 
 class MockBuilderGeneratorActionHandler : CodeInsightActionHandler
 {
@@ -16,10 +19,22 @@ class MockBuilderGeneratorActionHandler : CodeInsightActionHandler
         if (originalFile !is PsiJavaFile) return
         if (originalFile.classes.isEmpty()) return
 
+        val createMockBuilderDialog = CreateMockBuilderDialog(project)
+        createMockBuilderDialog.show()
+
+        val packageName = createMockBuilderDialog.targetName
+
+        val module = ModuleUtil.findModuleForFile(originalFile.getVirtualFile(), project)!!
+
+        val baseDir = PackageUtil.findPossiblePackageDirectoryInModule(module, packageName)
+
+        val psiDirectory = PackageUtil.findOrCreateDirectoryForPackage(module, packageName, baseDir,
+                true)
+
         val mockBuilderComponent = project.getComponent(
                 MockBuilderGeneratorProjectComponent::class.java)
 
-        val mockBuilderClass = mockBuilderComponent.execute(originalFile)
+        val mockBuilderClass = mockBuilderComponent.execute(originalFile, psiDirectory)
 
         CodeStyleManager.getInstance(project).reformat(mockBuilderClass)
 

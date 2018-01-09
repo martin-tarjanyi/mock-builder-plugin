@@ -1,6 +1,7 @@
 package com.martin.intellij.plugin.mockbuilder.component
 
 import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiJavaFile
 
 interface MockBuilderGeneratorProjectComponent
@@ -13,5 +14,5 @@ interface MockBuilderGeneratorProjectComponent
 //        }
 //    }
 
-    fun execute(originalJavaFile : PsiJavaFile): PsiClass
+    fun execute(originalJavaFile: PsiJavaFile, psiDirectory: PsiDirectory?): PsiClass
 }

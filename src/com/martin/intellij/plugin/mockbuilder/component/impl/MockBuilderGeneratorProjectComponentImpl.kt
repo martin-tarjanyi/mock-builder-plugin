@@ -15,12 +15,11 @@ class MockBuilderGeneratorProjectComponentImpl(project: Project) : MockBuilderGe
     private val elementFactory = JavaPsiFacade.getElementFactory(project)
     private val javaDirectoryService = JavaDirectoryService.getInstance()
 
-    override fun execute(originalJavaFile: PsiJavaFile): PsiClass
+    override fun execute(originalJavaFile: PsiJavaFile, psiDirectory: PsiDirectory?): PsiClass
     {
-        val originalDirectory = originalJavaFile.containingDirectory
         val originalClass = originalJavaFile.classes[0]
 
-        val mockBuilderClass = javaDirectoryService.createClass(originalDirectory, "${originalClass.name}MockBuilder")
+        val mockBuilderClass = javaDirectoryService.createClass(psiDirectory!!, "${originalClass.name}MockBuilder")
         val mockBuilderJavaFile = mockBuilderClass.containingFile as PsiJavaFile
 
         val methodsToMock = originalClass.allMethods
