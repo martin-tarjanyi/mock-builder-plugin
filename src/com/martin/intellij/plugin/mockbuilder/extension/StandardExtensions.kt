@@ -1,9 +1,5 @@
 package com.martin.intellij.plugin.mockbuilder.extension
 
-fun String.lastCharIfDigit(): Int?
-{
-    return lastOrNull()?.takeIf { it.isDigit() }?.toString()?.toInt()
-}
 
 fun MutableMap<String, Int>.addOccurence(key: String) : Int
 {
@@ -18,5 +14,16 @@ fun MutableMap<String, Int>.addOccurence(key: String) : Int
         put(key, incrementedValue)
 
         return incrementedValue
+    }
+}
+
+fun String.findIndefiniteArticle() : String
+{
+    val firstCharacter = toCharArray()[0]
+
+    return when (firstCharacter.toLowerCase())
+    {
+        'a', 'e', 'i', 'o', 'u' -> "an"
+        else -> "a"
     }
 }

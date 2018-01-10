@@ -8,6 +8,7 @@ import com.intellij.psi.util.PsiTypesUtil
 import com.martin.intellij.plugin.mockbuilder.component.MockBuilderGeneratorProjectComponent
 import com.martin.intellij.plugin.mockbuilder.extension.addOccurence
 import com.martin.intellij.plugin.mockbuilder.extension.createStatementFromText
+import com.martin.intellij.plugin.mockbuilder.extension.findIndefiniteArticle
 
 class MockBuilderGeneratorProjectComponentImpl(project: Project) : MockBuilderGeneratorProjectComponent
 {
@@ -114,7 +115,9 @@ class MockBuilderGeneratorProjectComponentImpl(project: Project) : MockBuilderGe
     private fun PsiClass.addStaticBuilderFactoryMethod(originalClass: PsiClass)
     {
         val psiClass = this
-        add(elementFactory.createMethod("a${originalClass.name}", elementFactory.createType(psiClass)).apply {
+        val indefiniteArticle = originalClass.name!!.findIndefiniteArticle()
+
+        add(elementFactory.createMethod("$indefiniteArticle${originalClass.name}", elementFactory.createType(psiClass)).apply {
             modifierList.setModifierProperty(PsiModifier.PUBLIC, true)
             body?.add(elementFactory.createStatementFromText("return new ${psiClass.name}();", null))
         })
