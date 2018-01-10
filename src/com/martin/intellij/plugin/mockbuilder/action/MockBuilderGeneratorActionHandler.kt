@@ -19,7 +19,7 @@ class MockBuilderGeneratorActionHandler : CodeInsightActionHandler
         if (originalFile !is PsiJavaFile) return
         if (originalFile.classes.isEmpty()) return
 
-        val createMockBuilderDialog = CreateMockBuilderDialog(project)
+        val createMockBuilderDialog = CreateMockBuilderDialog(project, originalFile.packageName)
         createMockBuilderDialog.show()
 
         val packageName = createMockBuilderDialog.targetName

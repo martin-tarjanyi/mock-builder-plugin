@@ -19,16 +19,16 @@ import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.KeyStroke
 
-class CreateMockBuilderDialog(project: Project) : DialogWrapper(project)
+class CreateMockBuilderDialog(project: Project, packageName: String) : DialogWrapper(project)
 {
     companion object
     {
         private val RECENTS_KEY = "CreateMockBuilderDialog.RecentsKey"
     }
 
-    private val targetPackageField = ReferenceEditorComboWithBrowseButton(null, "com.martin", project, true, RECENTS_KEY)
+    private val targetPackageField = ReferenceEditorComboWithBrowseButton(null, packageName, project, true, RECENTS_KEY)
 
-    var targetName: String = "";
+    var targetName: String = ""
 
     init
     {
