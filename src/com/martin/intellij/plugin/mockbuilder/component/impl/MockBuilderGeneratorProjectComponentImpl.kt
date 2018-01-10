@@ -119,6 +119,7 @@ class MockBuilderGeneratorProjectComponentImpl(project: Project) : MockBuilderGe
 
         add(elementFactory.createMethod("$indefiniteArticle${originalClass.name}", elementFactory.createType(psiClass)).apply {
             modifierList.setModifierProperty(PsiModifier.PUBLIC, true)
+            modifierList.setModifierProperty(PsiModifier.STATIC, true)
             body?.add(elementFactory.createStatementFromText("return new ${psiClass.name}();", null))
         })
     }
@@ -162,11 +163,13 @@ class MockBuilderGeneratorProjectComponentImpl(project: Project) : MockBuilderGe
             {
                 return "any${psiType.name.capitalize()}()"
             }
+            is PsiEllipsisType ->
+            {
+                return "isA(${psiType.presentableText.removeSuffix("...")}.class)"
+            }
             else ->
             {
-                throw UnsupportedOperationException(
-                        "Unsupported parameter type in class to mock. " + "Only primitive and reference types are supported.")
-
+                return "isA(${psiType.presentableText}.class)"
             }
         }
     }
@@ -199,7 +202,7 @@ class MockBuilderGeneratorProjectComponentImpl(project: Project) : MockBuilderGe
         {
             is PsiClassReferenceType -> returnType.className.decapitalize()
             is PsiPrimitiveType -> returnType.let { mapPrimitive(it) }
-//            is PsiArrayType -> returnType.let { mapPrimitive(it.) }
+            is PsiArrayType -> returnType.presentableText.decapitalize().removeSuffix("[]") + "s"
             else -> throw RuntimeException("Unexpected type.")
         }
     }
