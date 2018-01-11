@@ -77,15 +77,24 @@ class MockBuilderGeneratorProjectComponentImpl(project: Project) : MockBuilderGe
     {
         val psiJavaFile = containingFile as PsiJavaFile
 
-        methodsToMock.filter { isNotVoid(it) }.forEachIndexed { index, method ->
-            val parameters = method.parameterList.parameters
-                    .map { it.type }
-                    .onEach { PsiTypesUtil.getPsiClass(it)?.also { psiJavaFile.importList?.add(elementFactory.createImportStatement(it)) } }
-                    .joinToString(separator = ", ") { mapToEasyMockType(it) }
+        methodsToMock.filter { !isVoid(it) }.filter { !it.isConstructor }.forEachIndexed { index, method ->
+            val parameters = createMethodParametersForEasyMockApi(method, psiJavaFile)
 
             add(elementFactory.createStatementFromText(
                     "expect($mockVariableName.${method.name}($parameters))" + ".andStubReturn(${uniqueStubFields[index].name});"))
         }
+
+        methodsToMock.filter { isVoid(it) }.forEach {
+            val parameters = createMethodParametersForEasyMockApi(it, psiJavaFile)
+            add(elementFactory.createStatementFromText("$mockVariableName.${it.name}($parameters);"))
+        }
+    }
+
+    private fun createMethodParametersForEasyMockApi(method: PsiMethod, psiJavaFile: PsiJavaFile): String
+    {
+        return method.parameterList.parameters.map { it.type }
+                .onEach { PsiTypesUtil.getPsiClass(it)?.also { psiJavaFile.importList?.add(elementFactory.createImportStatement(it)) }}
+                .joinToString(separator = ", ") { mapToEasyMockType(it) }
     }
 
     private fun PsiCodeBlock.addCreateMockStatement(originalClass: PsiClass, mockVariableName: String)
@@ -179,7 +188,7 @@ class MockBuilderGeneratorProjectComponentImpl(project: Project) : MockBuilderGe
     {
         val fieldNamesWithOccurrences = mutableMapOf<String, Int>()
 
-        return methodsToMock.asSequence().filter { isNotVoid(it) }.map {
+        return methodsToMock.asSequence().filter { !isVoid(it) }.filter { !it.isConstructor }.map {
             val generatedFieldNameFromType = generateNameFromType(it)
             val cardinality = fieldNamesWithOccurrences.addOccurence(generatedFieldNameFromType)
 
@@ -194,16 +203,16 @@ class MockBuilderGeneratorProjectComponentImpl(project: Project) : MockBuilderGe
         }.toList()
     }
 
-    private fun generateNameFromType(it: PsiMethod): String
+    private fun generateNameFromType(method: PsiMethod): String
     {
-        val returnType = it.returnType
+        val returnType = method.returnType
 
         return when (returnType)
         {
             is PsiClassReferenceType -> returnType.className.decapitalize()
             is PsiPrimitiveType -> returnType.let { mapPrimitive(it) }
             is PsiArrayType -> returnType.presentableText.decapitalize().removeSuffix("[]") + "s"
-            else -> throw RuntimeException("Unexpected type.")
+            else -> throw RuntimeException("Unexpected type: $returnType")
         }
     }
 
@@ -213,7 +222,7 @@ class MockBuilderGeneratorProjectComponentImpl(project: Project) : MockBuilderGe
         else -> "primitive"
     }
 
-    private fun isNotVoid(it: PsiMethod) = it.returnType?.takeIf { it != PsiType.VOID } != null
+    private fun isVoid(it: PsiMethod) = it.returnType == PsiType.VOID
 
     private fun isPublic(it: PsiMethod) = it.modifierList.hasModifierProperty(PsiModifier.PUBLIC)
 
