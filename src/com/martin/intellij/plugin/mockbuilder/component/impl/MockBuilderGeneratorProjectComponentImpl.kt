@@ -8,10 +8,10 @@ import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.util.InheritanceUtil
 import com.intellij.psi.util.PsiTypesUtil
+import com.martin.intellij.plugin.common.util.addOccurrence
+import com.martin.intellij.plugin.common.util.createStatementFromText
+import com.martin.intellij.plugin.common.util.findIndefiniteArticle
 import com.martin.intellij.plugin.mockbuilder.component.MockBuilderGeneratorProjectComponent
-import com.martin.intellij.plugin.mockbuilder.util.addOccurrence
-import com.martin.intellij.plugin.mockbuilder.util.createStatementFromText
-import com.martin.intellij.plugin.mockbuilder.util.findIndefiniteArticle
 
 class MockBuilderGeneratorProjectComponentImpl(project: Project) : MockBuilderGeneratorProjectComponent
 {

@@ -33,6 +33,10 @@
       <interface-class>com.martin.intellij.plugin.mockbuilder.component.MockBuilderGeneratorProjectComponent</interface-class>
       <implementation-class>com.martin.intellij.plugin.mockbuilder.component.impl.MockBuilderGeneratorProjectComponentImpl</implementation-class>
     </component>
+    <component>
+      <interface-class>com.martin.intellij.plugin.unittest.component.UnitTestGeneratorProjectComponent</interface-class>
+      <implementation-class>com.martin.intellij.plugin.unittest.component.impl.UnitTestGeneratorProjectComponentImpl</implementation-class>
+    </component>
   </project-components>
 
   <actions>
@@ -40,7 +44,12 @@
     <action id="mock-builder-plugin" class="com.martin.intellij.plugin.mockbuilder.action.MockBuilderGeneratorAction" text="Mock Builder Generator"
             description="Creates Mock Builder with EasyMock">
       <add-to-group group-id="CodeMenu" anchor="last"/>
-      <keyboard-shortcut keymap="$default" first-keystroke="alt shift U"/>
+      <keyboard-shortcut keymap="$default" first-keystroke="alt shift M"/>
+    </action>
+    <action id="unit-test-generator" class="com.martin.intellij.plugin.unittest.action.UnitTestGeneratorAction"
+            text="Unit Test Generator" description="Creates skeleton for unit test in BDD style">
+      <add-to-group group-id="CodeMenu" anchor="last"/>
+      <keyboard-shortcut keymap="$default" first-keystroke="shift alt U"/>
     </action>
   </actions>
 

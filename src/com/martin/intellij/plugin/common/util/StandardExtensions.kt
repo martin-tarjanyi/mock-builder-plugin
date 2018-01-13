@@ -1,4 +1,4 @@
-package com.martin.intellij.plugin.mockbuilder.util
+package com.martin.intellij.plugin.common.util
 
 
 fun MutableMap<String, Int>.addOccurrence(key: String) : Int

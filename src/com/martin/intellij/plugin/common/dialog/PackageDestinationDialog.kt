@@ -1,4 +1,4 @@
-package com.martin.intellij.plugin.mockbuilder.dialog
+package com.martin.intellij.plugin.common.dialog
 
 import com.intellij.codeInsight.CodeInsightBundle
 import com.intellij.openapi.actionSystem.AnAction
@@ -19,7 +19,7 @@ import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.KeyStroke
 
-class CreateMockBuilderDialog(project: Project, packageName: String) : DialogWrapper(project)
+class PackageDestinationDialog(project: Project, packageName: String) : DialogWrapper(project)
 {
     companion object
     {

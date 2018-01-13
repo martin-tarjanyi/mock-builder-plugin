@@ -1,4 +1,4 @@
-package com.martin.intellij.plugin.mockbuilder.dialog
+package com.martin.intellij.plugin.common.dialog
 
 import com.intellij.codeInsight.CodeInsightBundle
 import com.intellij.ide.util.PackageChooserDialog
