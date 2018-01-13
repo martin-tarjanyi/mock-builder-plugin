@@ -6,11 +6,8 @@ import com.intellij.psi.*
 import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.intellij.psi.search.GlobalSearchScope
-import com.intellij.psi.util.InheritanceUtil
 import com.intellij.psi.util.PsiTypesUtil
-import com.martin.intellij.plugin.common.util.addOccurrence
-import com.martin.intellij.plugin.common.util.createStatementFromText
-import com.martin.intellij.plugin.common.util.findIndefiniteArticle
+import com.martin.intellij.plugin.common.util.*
 import com.martin.intellij.plugin.mockbuilder.component.MockBuilderGeneratorProjectComponent
 
 class MockBuilderGeneratorProjectComponentImpl(project: Project) : MockBuilderGeneratorProjectComponent
@@ -28,7 +25,7 @@ class MockBuilderGeneratorProjectComponentImpl(project: Project) : MockBuilderGe
 
         val methodsToMock = subjectClass.allMethods
                 .asSequence()
-                .filter { isPublic(it) and !it.isConstructor and (it.containingClass?.name == subjectClass.name) }
+                .filter { it.isPublic() and !it.isConstructor and (it.containingClass?.name == subjectClass.name) }
                 .toList()
 
         val uniqueStubFields = generateStubReturnedFieldsForMockedMethods(methodsToMock)
@@ -193,7 +190,7 @@ class MockBuilderGeneratorProjectComponentImpl(project: Project) : MockBuilderGe
         val fieldNamesWithOccurrences = mutableMapOf<String, Int>()
 
         return methodsToMock.asSequence().filter { !isVoid(it) }.map {
-            val generatedFieldNameFromType = generateNameFromType(it)
+            val generatedFieldNameFromType = it.returnType!!.generateName()
             val cardinality = fieldNamesWithOccurrences.addOccurrence(generatedFieldNameFromType)
 
             if (cardinality == 1)
@@ -207,45 +204,5 @@ class MockBuilderGeneratorProjectComponentImpl(project: Project) : MockBuilderGe
         }.toList()
     }
 
-    private fun generateNameFromType(method: PsiMethod): String
-    {
-        val returnType = method.returnType
-
-        return when (returnType)
-        {
-            is PsiClassReferenceType -> {
-
-                when
-                {
-                    isCollectionType(returnType) -> nameTypeBasedOnGenericParameter(returnType)
-
-                    else -> returnType.className.decapitalize()
-                }
-            }
-
-            is PsiPrimitiveType -> returnType.let { mapPrimitive(it) }
-            is PsiArrayType -> returnType.presentableText.decapitalize().removeSuffix("[]") + "s"
-            else -> throw RuntimeException("Unexpected type: $returnType")
-        }
-    }
-
-    private fun nameTypeBasedOnGenericParameter(returnType: PsiClassReferenceType): String {
-        return ((returnType.parameters.getOrNull(0)
-                as? PsiClassReferenceType)
-                ?.let { "${it.name}s" }?.decapitalize()
-                ?: returnType.className.decapitalize())
-    }
-
-    private fun isCollectionType(returnType: PsiType?) =
-            InheritanceUtil.isInheritor(returnType, "java.util.Collection")
-
-    private fun mapPrimitive(primitiveType: PsiPrimitiveType): String = when (primitiveType.name)
-    {
-        "int", "long", "short" -> "number"
-        else -> "primitive"
-    }
-
     private fun isVoid(it: PsiMethod) = it.returnType == PsiType.VOID
-
-    private fun isPublic(it: PsiMethod) = it.modifierList.hasModifierProperty(PsiModifier.PUBLIC)
 }
