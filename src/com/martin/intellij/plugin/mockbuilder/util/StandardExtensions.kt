@@ -1,7 +1,7 @@
-package com.martin.intellij.plugin.mockbuilder.extension
+package com.martin.intellij.plugin.mockbuilder.util
 
 
-fun MutableMap<String, Int>.addOccurence(key: String) : Int
+fun MutableMap<String, Int>.addOccurrence(key: String) : Int
 {
     if (!containsKey(key))
     {

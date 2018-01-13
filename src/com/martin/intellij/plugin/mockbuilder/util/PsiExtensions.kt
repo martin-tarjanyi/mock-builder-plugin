@@ -1,4 +1,4 @@
-package com.martin.intellij.plugin.mockbuilder.extension
+package com.martin.intellij.plugin.mockbuilder.util
 
 import com.intellij.psi.PsiElementFactory
 

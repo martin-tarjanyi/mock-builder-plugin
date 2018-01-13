@@ -1,12 +1,5 @@
 package com.martin.intellij.plugin.mockbuilder.action
 
-import com.intellij.codeInsight.CodeInsightActionHandler
-import com.intellij.codeInsight.actions.BaseCodeInsightAction
+import com.intellij.openapi.editor.actionSystem.EditorAction
 
-class MockBuilderGeneratorAction : BaseCodeInsightAction()
-{
-    override fun getHandler(): CodeInsightActionHandler
-    {
-        return MockBuilderGeneratorActionHandler()
-    }
-}
+class MockBuilderGeneratorAction : EditorAction(MockBuilderGeneratorActionHandler())

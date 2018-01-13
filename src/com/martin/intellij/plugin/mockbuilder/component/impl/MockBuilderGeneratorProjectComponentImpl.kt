@@ -1,32 +1,33 @@
 package com.martin.intellij.plugin.mockbuilder.component.impl
 
+import com.intellij.lang.java.JavaImportOptimizer
 import com.intellij.openapi.project.Project
 import com.intellij.psi.*
+import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.util.PsiTypesUtil
 import com.martin.intellij.plugin.mockbuilder.component.MockBuilderGeneratorProjectComponent
-import com.martin.intellij.plugin.mockbuilder.extension.addOccurence
-import com.martin.intellij.plugin.mockbuilder.extension.createStatementFromText
-import com.martin.intellij.plugin.mockbuilder.extension.findIndefiniteArticle
+import com.martin.intellij.plugin.mockbuilder.util.addOccurrence
+import com.martin.intellij.plugin.mockbuilder.util.createStatementFromText
+import com.martin.intellij.plugin.mockbuilder.util.findIndefiniteArticle
 
 class MockBuilderGeneratorProjectComponentImpl(project: Project) : MockBuilderGeneratorProjectComponent
 {
     private val javaPsiFacade = JavaPsiFacade.getInstance(project)
     private val elementFactory = JavaPsiFacade.getElementFactory(project)
     private val javaDirectoryService = JavaDirectoryService.getInstance()
+    private val codeStyleManager = CodeStyleManager.getInstance(project)
+    private val javaImportOptimizer = JavaImportOptimizer()
 
-    override fun execute(originalJavaFile: PsiJavaFile, psiDirectory: PsiDirectory?): PsiClass
+    override fun execute(subjectClass: PsiClass, psiDirectory: PsiDirectory): PsiClass
     {
-        val originalClass = originalJavaFile.classes[0]
-
-        val mockBuilderClass = javaDirectoryService.createClass(psiDirectory!!, "${originalClass.name}MockBuilder")
+        val mockBuilderClass = javaDirectoryService.createClass(psiDirectory, "${subjectClass.name}MockBuilder")
         val mockBuilderJavaFile = mockBuilderClass.containingFile as PsiJavaFile
 
-        val methodsToMock = originalClass.allMethods
+        val methodsToMock = subjectClass.allMethods
                 .asSequence()
-                .filter { isNotMethodInheritedFromObject(it)}
-                .filter { isPublic(it) }
+                .filter { isPublic(it) and !it.isConstructor and (it.containingClass?.name == subjectClass.name) }
                 .toList()
 
         val uniqueStubFields = generateStubReturnedFieldsForMockedMethods(methodsToMock)
@@ -34,26 +35,29 @@ class MockBuilderGeneratorProjectComponentImpl(project: Project) : MockBuilderGe
         mockBuilderClass.apply {
             addFieldsForMockedMethodsReturnValues(uniqueStubFields)
             addEmptyPrivateConstructor()
-            addStaticBuilderFactoryMethod(originalClass)
+            addStaticBuilderFactoryMethod(subjectClass)
             addWithMethods()
-            addBuildMethod(originalClass, methodsToMock, uniqueStubFields)
+            addBuildMethod(subjectClass, methodsToMock, uniqueStubFields)
         }
 
         mockBuilderJavaFile.importList?.apply {
             addEasyMockStaticImport()
         }
 
+        javaImportOptimizer.processFile(mockBuilderJavaFile)
+        codeStyleManager.reformat(mockBuilderClass)
+
         return mockBuilderClass
     }
 
-    private fun PsiClass.addBuildMethod(originalClass: PsiClass, methodsToMock: List<PsiMethod>,
+    private fun PsiClass.addBuildMethod(subjectClass: PsiClass, methodsToMock: List<PsiMethod>,
                                         uniqueStubFields: List<PsiField>)
     {
-        add(elementFactory.createMethod("build", elementFactory.createType(originalClass)).apply {
+        add(elementFactory.createMethod("build", elementFactory.createType(subjectClass)).apply {
             body?.apply {
-                val mockVariableName = originalClass.name!!.decapitalize()
+                val mockVariableName = subjectClass.name?.decapitalize() ?: throw IllegalStateException("Subject class has no name.")
 
-                addCreateMockStatement(originalClass, mockVariableName)
+                addCreateMockStatement(subjectClass, mockVariableName)
                 addExpectStatementsForMethodsWithReturnValue(methodsToMock, mockVariableName, uniqueStubFields)
                 addReplayStatement(mockVariableName)
                 addReturnStatement(mockVariableName)
@@ -77,7 +81,7 @@ class MockBuilderGeneratorProjectComponentImpl(project: Project) : MockBuilderGe
     {
         val psiJavaFile = containingFile as PsiJavaFile
 
-        methodsToMock.filter { !isVoid(it) }.filter { !it.isConstructor }.forEachIndexed { index, method ->
+        methodsToMock.filter { !isVoid(it) }.forEachIndexed { index, method ->
             val parameters = createMethodParametersForEasyMockApi(method, psiJavaFile)
 
             add(elementFactory.createStatementFromText(
@@ -183,14 +187,13 @@ class MockBuilderGeneratorProjectComponentImpl(project: Project) : MockBuilderGe
         }
     }
 
-
     private fun generateStubReturnedFieldsForMockedMethods(methodsToMock: List<PsiMethod>): List<PsiField>
     {
         val fieldNamesWithOccurrences = mutableMapOf<String, Int>()
 
-        return methodsToMock.asSequence().filter { !isVoid(it) }.filter { !it.isConstructor }.map {
+        return methodsToMock.asSequence().filter { !isVoid(it) }.map {
             val generatedFieldNameFromType = generateNameFromType(it)
-            val cardinality = fieldNamesWithOccurrences.addOccurence(generatedFieldNameFromType)
+            val cardinality = fieldNamesWithOccurrences.addOccurrence(generatedFieldNameFromType)
 
             if (cardinality == 1)
             {
@@ -225,7 +228,4 @@ class MockBuilderGeneratorProjectComponentImpl(project: Project) : MockBuilderGe
     private fun isVoid(it: PsiMethod) = it.returnType == PsiType.VOID
 
     private fun isPublic(it: PsiMethod) = it.modifierList.hasModifierProperty(PsiModifier.PUBLIC)
-
-    private fun isNotMethodInheritedFromObject(
-            it: PsiMethod) = it.containingClass?.name?.takeIf { it != "Object" } != null
 }
