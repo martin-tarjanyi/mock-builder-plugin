@@ -6,6 +6,7 @@ import com.intellij.psi.*
 import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.psi.util.InheritanceUtil
 import com.intellij.psi.util.PsiTypesUtil
 import com.martin.intellij.plugin.mockbuilder.component.MockBuilderGeneratorProjectComponent
 import com.martin.intellij.plugin.mockbuilder.util.addOccurrence
@@ -212,12 +213,31 @@ class MockBuilderGeneratorProjectComponentImpl(project: Project) : MockBuilderGe
 
         return when (returnType)
         {
-            is PsiClassReferenceType -> returnType.className.decapitalize()
+            is PsiClassReferenceType -> {
+
+                when
+                {
+                    isCollectionType(returnType) -> nameTypeBasedOnGenericParameter(returnType)
+
+                    else -> returnType.className.decapitalize()
+                }
+            }
+
             is PsiPrimitiveType -> returnType.let { mapPrimitive(it) }
             is PsiArrayType -> returnType.presentableText.decapitalize().removeSuffix("[]") + "s"
             else -> throw RuntimeException("Unexpected type: $returnType")
         }
     }
+
+    private fun nameTypeBasedOnGenericParameter(returnType: PsiClassReferenceType): String {
+        return ((returnType.parameters.getOrNull(0)
+                as? PsiClassReferenceType)
+                ?.let { "${it.name}s" }?.decapitalize()
+                ?: returnType.className.decapitalize())
+    }
+
+    private fun isCollectionType(returnType: PsiType?) =
+            InheritanceUtil.isInheritor(returnType, "java.util.Collection")
 
     private fun mapPrimitive(primitiveType: PsiPrimitiveType): String = when (primitiveType.name)
     {
