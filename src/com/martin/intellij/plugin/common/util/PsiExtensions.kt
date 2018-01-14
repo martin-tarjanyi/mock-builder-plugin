@@ -28,6 +28,13 @@ fun PsiType.generateName(): String
     }
 }
 
+fun PsiElementFactory.createPrivateMethod(name: String, returnType: PsiType): PsiMethod
+{
+    val createdMethod = createMethod(name, returnType)
+    createdMethod.modifierList.setModifierProperty(PsiModifier.PRIVATE, true)
+    return createdMethod
+}
+
 private fun nameTypeBasedOnGenericParameter(returnType: PsiClassReferenceType): String {
     return ((returnType.parameters.getOrNull(0)
             as? PsiClassReferenceType)

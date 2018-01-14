@@ -4,20 +4,20 @@ import com.intellij.lang.java.JavaImportOptimizer
 import com.intellij.openapi.project.Project
 import com.intellij.psi.*
 import com.intellij.psi.codeStyle.CodeStyleManager
+import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.util.PsiTypesUtil
-import com.martin.intellij.plugin.common.util.createStatementFromText
-import com.martin.intellij.plugin.common.util.findIndefiniteArticle
-import com.martin.intellij.plugin.common.util.generateName
-import com.martin.intellij.plugin.common.util.isPublic
+import com.martin.intellij.plugin.common.util.*
 import com.martin.intellij.plugin.mockbuilder.component.MockBuilderGeneratorProjectComponent
 import com.martin.intellij.plugin.unittest.component.UnitTestGeneratorProjectComponent
 
 class UnitTestGeneratorProjectComponentImpl(project: Project,
-                                            private val mockBuilderGeneratorProjectComponent: MockBuilderGeneratorProjectComponent)
+                                            private val mockBuilderGeneratorProjectComponent: MockBuilderGeneratorProjectComponent,
+                                            private val psiManager: PsiManager)
     : UnitTestGeneratorProjectComponent
 {
     private val javaDirectoryService = JavaDirectoryService.getInstance()
     private val elementFactory = JavaPsiFacade.getElementFactory(project)
+    private val javaPsiFacade = JavaPsiFacade.getInstance(project)
     private val codeStyleManager = CodeStyleManager.getInstance(project)
     private val javaImportOptimizer = JavaImportOptimizer()
 
@@ -48,6 +48,14 @@ class UnitTestGeneratorProjectComponentImpl(project: Project,
             addGivenStepsForMethodParameters(parametersForMethods)
             addGivenStepForMockedDependencies(mocks)
             addWhenMethods(methodsToTest, primaryConstructor, subjectClass)
+            addThenMethods(methodsToTest)
+        }
+
+        unitTestClass.addBefore(elementFactory.createAnnotationFromText("@Test(groups = \"unit\")", null),
+                unitTestClass.firstChild)
+
+        (unitTestClass.containingFile as PsiJavaFile).importList?.apply {
+            addTestNgImports()
         }
 
         javaImportOptimizer.processFile(unitTestClass.containingFile)
@@ -71,7 +79,7 @@ class UnitTestGeneratorProjectComponentImpl(project: Project,
     private fun PsiClass.addWhenMethods(methodsToTest: List<PsiMethod>, primaryConstructor: PsiMethod, subjectClass: PsiClass)
     {
         methodsToTest.forEach { methodToTest ->
-            add(elementFactory.createMethod("when${methodToTest.name.capitalize()}IsCalled", PsiType.VOID).apply {
+            add(elementFactory.createPrivateMethod("when${methodToTest.name.capitalize()}IsCalled", PsiType.VOID).apply {
                 body?.apply {
                     val parametersForConstructorInvocation = primaryConstructor.parameterList.parameters.map { it.name }.joinToString()
                     val methodParameters = methodToTest.parameterList.parameters.map { it.name }.joinToString()
@@ -96,7 +104,7 @@ class UnitTestGeneratorProjectComponentImpl(project: Project,
     {
         mocks.forEach { parameterName, mockClass ->
             val indefiniteArticle = parameterName.findIndefiniteArticle().capitalize()
-            add(elementFactory.createMethod("given$indefiniteArticle${parameterName.capitalize()}", PsiType.VOID).apply {
+            add(elementFactory.createPrivateMethod("given$indefiniteArticle${parameterName.capitalize()}", PsiType.VOID).apply {
                 body?.apply {
                     val factoryMethod = mockClass.allMethods.find {
                         it.modifierList.hasModifierProperty(PsiModifier.STATIC)
@@ -119,7 +127,7 @@ class UnitTestGeneratorProjectComponentImpl(project: Project,
         parametersForMethods.forEach { parameter ->
             val parameterName = parameter.name ?: throw IllegalStateException("Constructor parameter should have a name.")
             val indefiniteArticle = parameterName.findIndefiniteArticle().capitalize()
-            add(elementFactory.createMethod("given$indefiniteArticle${parameterName.capitalize()}", PsiType.VOID).apply {
+            add(elementFactory.createPrivateMethod("given$indefiniteArticle${parameterName.capitalize()}", PsiType.VOID).apply {
                 parameterList.apply {
                     add(elementFactory.createParameter(parameterName, parameter.type))
                 }
@@ -128,5 +136,36 @@ class UnitTestGeneratorProjectComponentImpl(project: Project,
                 }
             })
         }
+    }
+
+    private fun PsiClass.addThenMethods(methodsToTest: List<PsiMethod>)
+    {
+        methodsToTest.filter { it.returnType != PsiType.VOID }.forEach { methodToTest ->
+            val methodReturnValueName = methodToTest.returnType!!.generateName()
+            add(elementFactory.createPrivateMethod("then${methodReturnValueName.capitalize()}IsCorrect", PsiType.VOID).apply {
+                val expectedParameterName = "expected${methodReturnValueName.capitalize()}"
+                val actualFieldName = "actual${methodReturnValueName.capitalize()}"
+                val testCaseNameVariableName = "testCaseName"
+                parameterList.apply {
+                    add(elementFactory.createParameter(expectedParameterName, methodToTest.returnType!!))
+                    add(elementFactory.createParameter(testCaseNameVariableName,
+                            PsiType.getJavaLangString(psiManager, GlobalSearchScope.allScope(project))))
+                }
+                body?.apply {
+                    add(elementFactory.createStatementFromText("assertEquals($actualFieldName, $expectedParameterName, $testCaseNameVariableName);"))
+
+                }
+            })
+        }
+    }
+
+    private fun PsiImportList.addTestNgImports()
+    {
+        val testNgAssertClass = javaPsiFacade.findClass("org.testng.Assert", GlobalSearchScope.allScope(project)) ?: throw IllegalStateException("TestNG is not on classpath.")
+
+        val testAnnotation = javaPsiFacade.findClass("org.testng.annotations.Test", GlobalSearchScope.allScope(project)) ?: throw IllegalStateException("TestNG is not on classpath.")
+
+        add(elementFactory.createImportStaticStatement(testNgAssertClass, "*"))
+        add(elementFactory.createImportStatement(testAnnotation))
     }
 }
