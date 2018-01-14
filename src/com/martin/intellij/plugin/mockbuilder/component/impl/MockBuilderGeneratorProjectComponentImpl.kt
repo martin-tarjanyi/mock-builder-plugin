@@ -1,7 +1,6 @@
 package com.martin.intellij.plugin.mockbuilder.component.impl
 
 import com.intellij.lang.java.JavaImportOptimizer
-import com.intellij.openapi.project.Project
 import com.intellij.psi.*
 import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.psi.impl.source.PsiClassReferenceType
@@ -10,12 +9,12 @@ import com.intellij.psi.util.PsiTypesUtil
 import com.martin.intellij.plugin.common.util.*
 import com.martin.intellij.plugin.mockbuilder.component.MockBuilderGeneratorProjectComponent
 
-class MockBuilderGeneratorProjectComponentImpl(project: Project) : MockBuilderGeneratorProjectComponent
+class MockBuilderGeneratorProjectComponentImpl(private val elementFactory: PsiElementFactory,
+                                               private val javaPsiFacade: JavaPsiFacade,
+                                               private val codeStyleManager: CodeStyleManager,
+                                               private val javaDirectoryService: JavaDirectoryService)
+    : MockBuilderGeneratorProjectComponent
 {
-    private val javaPsiFacade = JavaPsiFacade.getInstance(project)
-    private val elementFactory = JavaPsiFacade.getElementFactory(project)
-    private val javaDirectoryService = JavaDirectoryService.getInstance()
-    private val codeStyleManager = CodeStyleManager.getInstance(project)
     private val javaImportOptimizer = JavaImportOptimizer()
 
     override fun execute(subjectClass: PsiClass, psiDirectory: PsiDirectory): PsiClass

@@ -37,6 +37,10 @@
       <interface-class>com.martin.intellij.plugin.unittest.component.UnitTestGeneratorProjectComponent</interface-class>
       <implementation-class>com.martin.intellij.plugin.unittest.component.impl.UnitTestGeneratorProjectComponentImpl</implementation-class>
     </component>
+    <component>
+      <interface-class>com.martin.intellij.plugin.unittest.component.TestCaseResourceMapperComponent</interface-class>
+      <implementation-class>com.martin.intellij.plugin.unittest.component.impl.TestCaseResourceMapperComponentImpl</implementation-class>
+    </component>
   </project-components>
 
   <actions>
