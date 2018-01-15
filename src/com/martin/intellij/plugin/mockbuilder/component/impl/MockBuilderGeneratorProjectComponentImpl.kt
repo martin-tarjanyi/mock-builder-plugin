@@ -1,31 +1,40 @@
 package com.martin.intellij.plugin.mockbuilder.component.impl
 
 import com.intellij.lang.java.JavaImportOptimizer
+import com.intellij.openapi.project.Project
 import com.intellij.psi.*
 import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.psi.impl.source.PsiClassReferenceType
 import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.psi.search.PsiShortNamesCache
 import com.intellij.psi.util.PsiTypesUtil
 import com.martin.intellij.plugin.common.util.*
 import com.martin.intellij.plugin.mockbuilder.component.MockBuilderGeneratorProjectComponent
 
-class MockBuilderGeneratorProjectComponentImpl(private val elementFactory: PsiElementFactory,
+class MockBuilderGeneratorProjectComponentImpl(private val project: Project,
+                                               private val elementFactory: PsiElementFactory,
                                                private val javaPsiFacade: JavaPsiFacade,
+                                               private val psiShortNamesCache: PsiShortNamesCache,
                                                private val codeStyleManager: CodeStyleManager,
-                                               private val javaDirectoryService: JavaDirectoryService)
-    : MockBuilderGeneratorProjectComponent
+                                               private val javaDirectoryService: JavaDirectoryService) : MockBuilderGeneratorProjectComponent
 {
     private val javaImportOptimizer = JavaImportOptimizer()
 
     override fun execute(subjectClass: PsiClass, psiDirectory: PsiDirectory): PsiClass
     {
-        val mockBuilderClass = javaDirectoryService.createClass(psiDirectory, "${subjectClass.name}MockBuilder")
+        val mockBuilderClassName = "${subjectClass.name}MockBuilder"
+
+        val foundMockBuilderClass = psiShortNamesCache.getClassesByName(mockBuilderClassName, GlobalSearchScope.allScope(project))
+
+        if (foundMockBuilderClass.isNotEmpty())
+        {
+            return foundMockBuilderClass.first()
+        }
+
+        val mockBuilderClass = javaDirectoryService.createClass(psiDirectory, mockBuilderClassName)
         val mockBuilderJavaFile = mockBuilderClass.containingFile as PsiJavaFile
 
-        val methodsToMock = subjectClass.allMethods
-                .asSequence()
-                .filter { it.isPublic() and !it.isConstructor and (it.containingClass?.name == subjectClass.name) }
-                .toList()
+        val methodsToMock = subjectClass.allMethods.asSequence().filter { it.isPublic() and !it.isConstructor and (it.containingClass?.name == subjectClass.name) }.toList()
 
         val uniqueStubFields = generateStubReturnedFieldsForMockedMethods(methodsToMock)
 
@@ -52,7 +61,8 @@ class MockBuilderGeneratorProjectComponentImpl(private val elementFactory: PsiEl
     {
         add(elementFactory.createMethod("build", elementFactory.createType(subjectClass)).apply {
             body?.apply {
-                val mockVariableName = subjectClass.name?.decapitalize() ?: throw IllegalStateException("Subject class has no name.")
+                val mockVariableName = subjectClass.name?.decapitalize() ?: throw IllegalStateException(
+                        "Subject class has no name.")
 
                 addCreateMockStatement(subjectClass, mockVariableName)
                 addExpectStatementsForMethodsWithReturnValue(methodsToMock, mockVariableName, uniqueStubFields)
@@ -93,9 +103,9 @@ class MockBuilderGeneratorProjectComponentImpl(private val elementFactory: PsiEl
 
     private fun createMethodParametersForEasyMockApi(method: PsiMethod, psiJavaFile: PsiJavaFile): String
     {
-        return method.parameterList.parameters.map { it.type }
-                .onEach { PsiTypesUtil.getPsiClass(it)?.also { psiJavaFile.importList?.add(elementFactory.createImportStatement(it)) }}
-                .joinToString(separator = ", ") { mapToEasyMockType(it) }
+        return method.parameterList.parameters.map { it.type }.onEach {
+            PsiTypesUtil.getPsiClass(it)?.also { psiJavaFile.importList?.add(elementFactory.createImportStatement(it)) }
+        }.joinToString(separator = ", ") { mapToEasyMockType(it) }
     }
 
     private fun PsiCodeBlock.addCreateMockStatement(originalClass: PsiClass, mockVariableName: String)
@@ -111,7 +121,8 @@ class MockBuilderGeneratorProjectComponentImpl(private val elementFactory: PsiEl
     {
         val psiClass = this
         allFields.forEach { field ->
-            add(elementFactory.createMethod("with${field.name.capitalize()}", elementFactory.createType(psiClass)).apply {
+            add(elementFactory.createMethod("with${field.name.capitalize()}",
+                    elementFactory.createType(psiClass)).apply {
                 parameterList.add(elementFactory.createParameter(field.name, field.type))
 
                 body?.apply {
@@ -127,7 +138,8 @@ class MockBuilderGeneratorProjectComponentImpl(private val elementFactory: PsiEl
         val psiClass = this
         val indefiniteArticle = originalClass.name!!.findIndefiniteArticle()
 
-        add(elementFactory.createMethod("$indefiniteArticle${originalClass.name}", elementFactory.createType(psiClass)).apply {
+        add(elementFactory.createMethod("$indefiniteArticle${originalClass.name}",
+                elementFactory.createType(psiClass)).apply {
             modifierList.setModifierProperty(PsiModifier.PUBLIC, true)
             modifierList.setModifierProperty(PsiModifier.STATIC, true)
             body?.add(elementFactory.createStatementFromText("return new ${psiClass.name}();", null))
@@ -156,7 +168,8 @@ class MockBuilderGeneratorProjectComponentImpl(private val elementFactory: PsiEl
 
     private fun PsiImportList.addEasyMockStaticImport()
     {
-        val easymockClass = javaPsiFacade.findClass("org.easymock.EasyMock", GlobalSearchScope.allScope(project)) ?: throw IllegalStateException("EasyMock is not on classpath.")
+        val easymockClass = javaPsiFacade.findClass("org.easymock.EasyMock",
+                GlobalSearchScope.allScope(project)) ?: throw IllegalStateException("EasyMock is not on classpath.")
 
         add(elementFactory.createImportStaticStatement(easymockClass, "*"))
     }
@@ -203,5 +216,5 @@ class MockBuilderGeneratorProjectComponentImpl(private val elementFactory: PsiEl
         }.toList()
     }
 
-    private fun isVoid(it: PsiMethod) = it.returnType == PsiType.VOID
+    private fun isVoid(psiMethod: PsiMethod) = psiMethod.returnType == PsiType.VOID
 }

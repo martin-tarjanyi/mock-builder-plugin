@@ -1,9 +1,11 @@
 package com.martin.intellij.plugin.unittest.component.impl
 
 import com.intellij.lang.java.JavaImportOptimizer
+import com.intellij.openapi.project.Project
 import com.intellij.psi.*
 import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.psi.search.PsiShortNamesCache
 import com.intellij.psi.util.PsiTypesUtil
 import com.martin.intellij.plugin.common.util.createPrivateMethod
 import com.martin.intellij.plugin.common.util.createStatementFromText
@@ -13,20 +15,30 @@ import com.martin.intellij.plugin.mockbuilder.component.MockBuilderGeneratorProj
 import com.martin.intellij.plugin.unittest.component.TestCaseResourceMapperComponent
 import com.martin.intellij.plugin.unittest.component.UnitTestGeneratorProjectComponent
 
-class UnitTestGeneratorProjectComponentImpl(
-        private val mockBuilderGenerator: MockBuilderGeneratorProjectComponent,
-        private val testCaseResourceMapper: TestCaseResourceMapperComponent,
-        private val elementFactory: PsiElementFactory,
-        private val javaPsiFacade: JavaPsiFacade,
-        private val codeStyleManager: CodeStyleManager,
-        private val javaDirectoryService: JavaDirectoryService)
+class UnitTestGeneratorProjectComponentImpl(private val project: Project,
+                                            private val mockBuilderGenerator: MockBuilderGeneratorProjectComponent,
+                                            private val testCaseResourceMapper: TestCaseResourceMapperComponent,
+                                            private val elementFactory: PsiElementFactory,
+                                            private val javaPsiFacade: JavaPsiFacade,
+                                            private val psiShortNamesCache: PsiShortNamesCache,
+                                            private val codeStyleManager: CodeStyleManager,
+                                            private val javaDirectoryService: JavaDirectoryService)
     : UnitTestGeneratorProjectComponent
 {
     private val javaImportOptimizer = JavaImportOptimizer()
 
     override fun execute(subjectClass: PsiClass, psiDirectory: PsiDirectory): PsiClass
     {
-        val unitTestClass = javaDirectoryService.createClass(psiDirectory, "${subjectClass.name}Test")
+        val testClassName = "${subjectClass.name}Test"
+
+        val foundUnitTestClasses = psiShortNamesCache.getClassesByName(testClassName, GlobalSearchScope.allScope(project))
+
+        if (foundUnitTestClasses.isNotEmpty())
+        {
+            return foundUnitTestClasses.first()
+        }
+
+        val unitTestClass = javaDirectoryService.createClass(psiDirectory, testClassName)
 
         val primaryConstructor = subjectClass.allMethods.filter { it.isConstructor }.maxBy { it.parameters.size } ?: throw IllegalStateException(
                 "Subject class does not have any constructor.")

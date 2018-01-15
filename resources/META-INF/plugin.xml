@@ -1,6 +1,6 @@
 <idea-plugin>
-  <id>com.martin.intellij.plugin.mockbuilder</id>
-  <name>Plugin display name here</name>
+  <id>com.martin.intellij.plugin</id>
+  <name>Unit Test Helper</name>
   <version>1.0</version>
   <vendor email="support@yourcompany.com" url="http://www.mycomapany.com">MyCompany</vendor>
 
@@ -45,7 +45,7 @@
 
   <actions>
     <!-- Add your actions here -->
-    <action id="mock-builder-plugin" class="com.martin.intellij.plugin.mockbuilder.action.MockBuilderGeneratorAction" text="Mock Builder Generator"
+    <action id="mock-builder-generator" class="com.martin.intellij.plugin.mockbuilder.action.MockBuilderGeneratorAction" text="Mock Builder Generator"
             description="Creates Mock Builder with EasyMock">
       <add-to-group group-id="CodeMenu" anchor="last"/>
       <keyboard-shortcut keymap="$default" first-keystroke="alt shift M"/>
