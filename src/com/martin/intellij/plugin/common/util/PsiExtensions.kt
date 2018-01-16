@@ -35,6 +35,11 @@ fun PsiElementFactory.createPrivateMethod(name: String, returnType: PsiType): Ps
     return createdMethod
 }
 
+fun PsiParserFacade.doubleLineBreak(): PsiElement
+{
+    return createWhiteSpaceFromText("\n\n")
+}
+
 private fun nameTypeBasedOnGenericParameter(returnType: PsiClassReferenceType): String {
     return ((returnType.parameters.getOrNull(0)
             as? PsiClassReferenceType)

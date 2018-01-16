@@ -15,6 +15,7 @@ class MockBuilderGeneratorProjectComponentImpl(private val project: Project,
                                                private val elementFactory: PsiElementFactory,
                                                private val javaPsiFacade: JavaPsiFacade,
                                                private val psiShortNamesCache: PsiShortNamesCache,
+                                               private val psiParserFacade: PsiParserFacade,
                                                private val codeStyleManager: CodeStyleManager,
                                                private val javaDirectoryService: JavaDirectoryService) : MockBuilderGeneratorProjectComponent
 {
@@ -65,8 +66,11 @@ class MockBuilderGeneratorProjectComponentImpl(private val project: Project,
                         "Subject class has no name.")
 
                 addCreateMockStatement(subjectClass, mockVariableName)
-                addExpectStatementsForMethodsWithReturnValue(methodsToMock, mockVariableName, uniqueStubFields)
+                add(psiParserFacade.doubleLineBreak())
+                addExpectStatementsForMethods(methodsToMock, mockVariableName, uniqueStubFields)
+                add(psiParserFacade.doubleLineBreak())
                 addReplayStatement(mockVariableName)
+                add(psiParserFacade.doubleLineBreak())
                 addReturnStatement(mockVariableName)
             }
         })
@@ -82,9 +86,9 @@ class MockBuilderGeneratorProjectComponentImpl(private val project: Project,
         add(elementFactory.createStatementFromText("replay($mockVariableName);"))
     }
 
-    private fun PsiCodeBlock.addExpectStatementsForMethodsWithReturnValue(methodsToMock: List<PsiMethod>,
-                                                                          mockVariableName: String,
-                                                                          uniqueStubFields: List<PsiField>)
+    private fun PsiCodeBlock.addExpectStatementsForMethods(methodsToMock: List<PsiMethod>,
+                                                           mockVariableName: String,
+                                                           uniqueStubFields: List<PsiField>)
     {
         val psiJavaFile = containingFile as PsiJavaFile
 
@@ -95,10 +99,13 @@ class MockBuilderGeneratorProjectComponentImpl(private val project: Project,
                     "expect($mockVariableName.${method.name}($parameters))" + ".andStubReturn(${uniqueStubFields[index].name});"))
         }
 
-        methodsToMock.filter { isVoid(it) }.forEach {
-            val parameters = createMethodParametersForEasyMockApi(it, psiJavaFile)
-            add(elementFactory.createStatementFromText("$mockVariableName.${it.name}($parameters);"))
-        }
+        methodsToMock.filter { isVoid(it) }
+                .takeIf { it.isNotEmpty() }
+                ?.also { add(psiParserFacade.doubleLineBreak()) }
+                ?.forEach { val parameters = createMethodParametersForEasyMockApi(it, psiJavaFile)
+                    add(elementFactory.createStatementFromText("$mockVariableName.${it.name}($parameters);"))
+                }
+
     }
 
     private fun createMethodParametersForEasyMockApi(method: PsiMethod, psiJavaFile: PsiJavaFile): String
