@@ -27,7 +27,7 @@ class MockBuilderGeneratorActionHandler : EditorActionHandler()
         val packageName = createMockBuilderDialog.targetName
         val psiDirectory = PsiUtils.createDirectoryByPackageName(subjectFile, project, packageName)
 
-        val mockBuilderClass = MyWriteAction(project, subjectFile)
+        val mockBuilderClass = WriteActionWrapper(project, subjectFile)
         {
             project.getComponent(MockBuilderGeneratorProjectComponent::class.java).execute(subjectClass, psiDirectory)
         }.perform()

@@ -9,7 +9,7 @@ import com.intellij.openapi.editor.actionSystem.EditorActionHandler
 import com.intellij.psi.PsiJavaFile
 import com.martin.intellij.plugin.common.dialog.PackageDestinationDialog
 import com.martin.intellij.plugin.common.util.PsiUtils
-import com.martin.intellij.plugin.mockbuilder.action.MyWriteAction
+import com.martin.intellij.plugin.mockbuilder.action.WriteActionWrapper
 import com.martin.intellij.plugin.unittest.component.UnitTestGeneratorProjectComponent
 
 class UnitTestGeneratorAction : EditorAction(
@@ -29,7 +29,7 @@ class UnitTestGeneratorActionHandler : EditorActionHandler()
         val packageName = unitTestDialog.targetName
         val psiDirectory = PsiUtils.createDirectoryByPackageName(subjectFile, project, packageName)
 
-        val unitTestClass = MyWriteAction(project, subjectFile) {
+        val unitTestClass = WriteActionWrapper(project, subjectFile) {
             project.getComponent(UnitTestGeneratorProjectComponent::class.java).execute(subjectClass, psiDirectory)
         }.perform()
 

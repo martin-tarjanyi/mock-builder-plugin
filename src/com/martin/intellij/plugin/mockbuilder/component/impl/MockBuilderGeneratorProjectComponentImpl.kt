@@ -51,7 +51,7 @@ class MockBuilderGeneratorProjectComponentImpl(private val project: Project,
             addEasyMockStaticImport()
         }
 
-        javaImportOptimizer.processFile(mockBuilderJavaFile)
+        javaImportOptimizer.processFile(mockBuilderJavaFile).run()
         codeStyleManager.reformat(mockBuilderClass)
 
         return mockBuilderClass

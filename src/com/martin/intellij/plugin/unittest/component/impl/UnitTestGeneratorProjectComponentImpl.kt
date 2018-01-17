@@ -15,15 +15,16 @@ import com.martin.intellij.plugin.mockbuilder.component.MockBuilderGeneratorProj
 import com.martin.intellij.plugin.unittest.component.TestCaseResourceMapperComponent
 import com.martin.intellij.plugin.unittest.component.UnitTestGeneratorProjectComponent
 
-class UnitTestGeneratorProjectComponentImpl(private val project: Project,
-                                            private val mockBuilderGenerator: MockBuilderGeneratorProjectComponent,
-                                            private val testCaseResourceMapper: TestCaseResourceMapperComponent,
-                                            private val elementFactory: PsiElementFactory,
-                                            private val javaPsiFacade: JavaPsiFacade,
-                                            private val psiShortNamesCache: PsiShortNamesCache,
-                                            private val codeStyleManager: CodeStyleManager,
-                                            private val javaDirectoryService: JavaDirectoryService)
-    : UnitTestGeneratorProjectComponent
+class UnitTestGeneratorProjectComponentImpl(
+    private val project: Project,
+    private val mockBuilderGenerator: MockBuilderGeneratorProjectComponent,
+    private val testCaseResourceMapper: TestCaseResourceMapperComponent,
+    private val elementFactory: PsiElementFactory,
+    private val javaPsiFacade: JavaPsiFacade,
+    private val psiShortNamesCache: PsiShortNamesCache,
+    private val codeStyleManager: CodeStyleManager,
+    private val javaDirectoryService: JavaDirectoryService
+) : UnitTestGeneratorProjectComponent
 {
     private val javaImportOptimizer = JavaImportOptimizer()
 
@@ -31,7 +32,8 @@ class UnitTestGeneratorProjectComponentImpl(private val project: Project,
     {
         val testClassName = "${subjectClass.name}Test"
 
-        val foundUnitTestClasses = psiShortNamesCache.getClassesByName(testClassName, GlobalSearchScope.allScope(project))
+        val foundUnitTestClasses =
+            psiShortNamesCache.getClassesByName(testClassName, GlobalSearchScope.allScope(project))
 
         if (foundUnitTestClasses.isNotEmpty())
         {
@@ -40,8 +42,10 @@ class UnitTestGeneratorProjectComponentImpl(private val project: Project,
 
         val unitTestClass = javaDirectoryService.createClass(psiDirectory, testClassName)
 
-        val primaryConstructor = subjectClass.allMethods.filter { it.isConstructor }.maxBy { it.parameters.size } ?: throw IllegalStateException(
-                "Subject class does not have any constructor.")
+        val primaryConstructor = subjectClass.allMethods.filter { it.isConstructor }.maxBy { it.parameters.size }
+                ?: throw IllegalStateException(
+                    "Subject class does not have any constructor."
+                )
 
         val constructorParameters = primaryConstructor.parameterList.parameters.toList()
 
@@ -54,8 +58,8 @@ class UnitTestGeneratorProjectComponentImpl(private val project: Project,
 
         val givenStepsForMockedDependencies = createGivenStepForMockedDependencies(mocks)
 
-        val methodsToTest = subjectClass.allMethods
-                .filter { it.isPublic() and !it.isConstructor and (it.containingClass?.name == subjectClass.name) }
+        val methodsToTest =
+            subjectClass.allMethods.filter { it.isPublic() and !it.isConstructor and (it.containingClass?.name == subjectClass.name) }
 
         val testCasesResources = methodsToTest.map {
             testCaseResourceMapper.map(it, givenStepsForMockedDependencies, mockedFields, subjectClass)
@@ -69,42 +73,47 @@ class UnitTestGeneratorProjectComponentImpl(private val project: Project,
             testCasesResources.map { it.whenMethod }.forEach { add(it) }
             testCasesResources.mapNotNull { it.thenMethod }.forEach { add(it) }
 
-            modifierList?.addAnnotation("Test")?.setDeclaredAttributeValue("groups",
-                    elementFactory.createExpressionFromText("\"unit\"", null))
+            modifierList?.addAnnotation("Test")?.setDeclaredAttributeValue(
+                "groups", elementFactory.createExpressionFromText("\"unit\"", null)
+            )
         }
 
         (unitTestClass.containingFile as PsiJavaFile).importList?.apply {
+            mocks.values.forEach { add(elementFactory.createImportStatement(it)) }
             addTestNgImports()
         }
 
-        javaImportOptimizer.processFile(unitTestClass.containingFile)
+        javaImportOptimizer.processFile(unitTestClass.containingFile).run()
         codeStyleManager.reformat(unitTestClass)
 
         return unitTestClass
     }
 
-    private fun createGivenStepForMockedDependencies(mocks: Map<String, PsiClass>) : List<PsiMethod>
+    private fun createGivenStepForMockedDependencies(mocks: Map<String, PsiClass>): List<PsiMethod>
     {
         return mocks.map { (parameterName, mockClass) ->
             val indefiniteArticle = parameterName.findIndefiniteArticle().capitalize()
-            elementFactory.createPrivateMethod("given$indefiniteArticle${parameterName.capitalize()}", PsiType.VOID).apply {
-                body?.apply {
-                    val factoryMethod = mockClass.allMethods.find {
-                        it.modifierList.hasModifierProperty(PsiModifier.STATIC)
+            elementFactory.createPrivateMethod("given$indefiniteArticle${parameterName.capitalize()}", PsiType.VOID)
+                .apply {
+                    body?.apply {
+                        val factoryMethod = mockClass.allMethods.find {
+                            it.modifierList.hasModifierProperty(PsiModifier.STATIC)
+                        }
+                        add(elementFactory.createStatementFromText("this.$parameterName = ${mockClass.name}.${factoryMethod!!.name}().build();"))
                     }
-                    add(elementFactory.createStatementFromText("this.$parameterName = ${mockClass.name}.${factoryMethod!!.name}().build();"))
                 }
-            }
         }
     }
 
     private fun PsiImportList.addTestNgImports()
     {
-        val testNgAssertClass = javaPsiFacade.findClass("org.testng.Assert",
-                GlobalSearchScope.allScope(project)) ?: throw IllegalStateException("TestNG is not on classpath.")
+        val testNgAssertClass = javaPsiFacade.findClass(
+            "org.testng.Assert", GlobalSearchScope.allScope(project)
+        ) ?: throw IllegalStateException("TestNG is not on classpath.")
 
-        val testAnnotation = javaPsiFacade.findClass("org.testng.annotations.Test",
-                GlobalSearchScope.allScope(project)) ?: throw IllegalStateException("TestNG is not on classpath.")
+        val testAnnotation = javaPsiFacade.findClass(
+            "org.testng.annotations.Test", GlobalSearchScope.allScope(project)
+        ) ?: throw IllegalStateException("TestNG is not on classpath.")
 
         add(elementFactory.createImportStaticStatement(testNgAssertClass, "*"))
         add(elementFactory.createImportStatement(testAnnotation))

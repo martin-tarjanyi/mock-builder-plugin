@@ -5,7 +5,7 @@ import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
 
-class MyWriteAction<T>(project: Project, psiFile: PsiFile, private val action: () -> T)  : WriteCommandAction<T>(project, psiFile)
+class WriteActionWrapper<T>(project: Project, psiFile: PsiFile, private val action: () -> T)  : WriteCommandAction<T>(project, psiFile)
 {
     fun perform() : T
     {
