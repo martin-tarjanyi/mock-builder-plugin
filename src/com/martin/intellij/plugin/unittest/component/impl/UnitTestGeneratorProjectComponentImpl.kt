@@ -28,7 +28,11 @@ class UnitTestGeneratorProjectComponentImpl(
 {
     private val javaImportOptimizer = JavaImportOptimizer()
 
-    override fun execute(subjectClass: PsiClass, psiDirectory: PsiDirectory): PsiClass
+    override fun execute(
+        subjectClass: PsiClass,
+        unitTestPsiDirectory: PsiDirectory,
+        mockBuilderPsiDirectory: PsiDirectory
+    ): PsiClass
     {
         val testClassName = "${subjectClass.name}Test"
 
@@ -40,7 +44,7 @@ class UnitTestGeneratorProjectComponentImpl(
             return foundUnitTestClasses.first()
         }
 
-        val unitTestClass = javaDirectoryService.createClass(psiDirectory, testClassName)
+        val unitTestClass = javaDirectoryService.createClass(unitTestPsiDirectory, testClassName)
 
         val primaryConstructor = subjectClass.allMethods.filter { it.isConstructor }.maxBy { it.parameters.size }
                 ?: throw IllegalStateException(
@@ -53,7 +57,7 @@ class UnitTestGeneratorProjectComponentImpl(
 
         val mocks = constructorParameters.associateBy({ param: PsiParameter -> param.name!! }, { param: PsiParameter ->
             val paramClass = PsiTypesUtil.getPsiClass(param.type)!!
-            mockBuilderGenerator.execute(paramClass, psiDirectory)
+            mockBuilderGenerator.execute(paramClass, mockBuilderPsiDirectory)
         })
 
         val givenStepsForMockedDependencies = createGivenStepForMockedDependencies(mocks)

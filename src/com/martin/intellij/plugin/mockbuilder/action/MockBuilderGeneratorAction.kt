@@ -7,9 +7,9 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.actionSystem.EditorAction
 import com.intellij.openapi.editor.actionSystem.EditorActionHandler
 import com.intellij.psi.PsiJavaFile
-import com.martin.intellij.plugin.common.dialog.PackageDestinationDialog
 import com.martin.intellij.plugin.common.util.PsiUtils
 import com.martin.intellij.plugin.mockbuilder.component.MockBuilderGeneratorProjectComponent
+import com.martin.intellij.plugin.mockbuilder.dialog.MockBuilderPackageDestinationDialog
 
 class MockBuilderGeneratorAction : EditorAction(MockBuilderGeneratorActionHandler())
 
@@ -21,7 +21,7 @@ class MockBuilderGeneratorActionHandler : EditorActionHandler()
         val subjectFile = dataContext?.getData(CommonDataKeys.PSI_FILE) as? PsiJavaFile ?: return
         val subjectClass = subjectFile.classes.getOrNull(0) ?: return
 
-        val createMockBuilderDialog = PackageDestinationDialog(project, subjectFile.packageName)
+        val createMockBuilderDialog = MockBuilderPackageDestinationDialog(project, subjectFile.packageName)
         createMockBuilderDialog.show()
 
         val packageName = createMockBuilderDialog.targetName

@@ -5,5 +5,9 @@ import com.intellij.psi.PsiDirectory
 
 interface UnitTestGeneratorProjectComponent
 {
-    fun execute(subjectClass: PsiClass, psiDirectory: PsiDirectory): PsiClass
+    fun execute(
+        subjectClass: PsiClass,
+        unitTestPsiDirectory: PsiDirectory,
+        mockBuilderPsiDirectory: PsiDirectory
+    ): PsiClass
 }

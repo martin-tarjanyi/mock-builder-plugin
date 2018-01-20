@@ -1,4 +1,4 @@
-package com.martin.intellij.plugin.common.dialog
+package com.martin.intellij.plugin.mockbuilder.dialog
 
 import com.intellij.codeInsight.CodeInsightBundle
 import com.intellij.openapi.actionSystem.AnAction
@@ -8,6 +8,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.IdeBorderFactory
 import com.intellij.ui.ReferenceEditorComboWithBrowseButton
+import com.martin.intellij.plugin.common.dialog.ChooserDisplayerActionListener
 import java.awt.BorderLayout
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
@@ -19,14 +20,20 @@ import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.KeyStroke
 
-class PackageDestinationDialog(project: Project, packageName: String) : DialogWrapper(project)
+class MockBuilderPackageDestinationDialog(project: Project, packageName: String) : DialogWrapper(project)
 {
     companion object
     {
         private val RECENTS_KEY = "CreateMockBuilderDialog.RecentsKey"
     }
 
-    private val targetPackageField = ReferenceEditorComboWithBrowseButton(null, packageName, project, true, RECENTS_KEY)
+    private val targetPackageField = ReferenceEditorComboWithBrowseButton(
+        null,
+        packageName,
+        project,
+        true,
+        RECENTS_KEY
+    )
 
     var targetName: String = ""
 
@@ -35,7 +42,12 @@ class PackageDestinationDialog(project: Project, packageName: String) : DialogWr
         super.init()
         title = "Create Mock Builder"
 
-        targetPackageField.addActionListener(ChooserDisplayerActionListener(project, targetPackageField))
+        targetPackageField.addActionListener(
+            ChooserDisplayerActionListener(
+                project,
+                targetPackageField
+            )
+        )
     }
 
     override fun createCenterPanel(): JComponent?
@@ -64,7 +76,12 @@ class PackageDestinationDialog(project: Project, packageName: String) : DialogWr
         }
 
         clickAction.registerCustomShortcutSet(
-                CustomShortcutSet(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.SHIFT_DOWN_MASK)),
+            CustomShortcutSet(
+                KeyStroke.getKeyStroke(
+                    KeyEvent.VK_ENTER,
+                    InputEvent.SHIFT_DOWN_MASK
+                )
+            ),
                 targetPackageField.childComponent)
 
         addInnerPanelForDestinationPackageField(panel, gridBagConstraints)
