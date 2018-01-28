@@ -19,17 +19,17 @@ class PsiUtils
         {
             val psiManager = PsiManager.getInstance(project)
             val module = ModuleUtil.findModuleForFile(subjectFile.virtualFile, project) ?: throw IllegalStateException(
-                    "Subject class is not related to module.")
+                "Subject class is not related to module."
+            )
 
-//            val baseDir = PackageUtil.findPossiblePackageDirectoryInModule(module, packageName)
-
-            val baseTestDir = ModuleRootManager.getInstance(module).getSourceRoots(JavaSourceRootType.TEST_SOURCE)
-                .firstOrNull()?.let { psiManager.findDirectory(it) } ?: throw RuntimeException("No test source is found. Create test sources to execute this action.")
+            val baseTestDir =
+                ModuleRootManager.getInstance(module).getSourceRoots(JavaSourceRootType.TEST_SOURCE).firstOrNull()?.let {
+                        psiManager.findDirectory(it)
+                    } ?: throw RuntimeException("No test source is found. Create test sources to execute this action.")
 
             return WriteActionWrapper(project, subjectFile) {
                 RefactoringUtil.createPackageDirectoryInSourceRoot(
-                    PackageWrapper(psiManager, packageName),
-                    baseTestDir.virtualFile
+                    PackageWrapper(psiManager, packageName), baseTestDir.virtualFile
                 )
             }.perform()
         }
